@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catálogo de Ropa</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,600;1,400&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f5f3ef;
+    --surface: #ffffff;
+    --border: #e8e5de;
+    --text: #1c1b18;
+    --muted: #8a8778;
+    --accent: #2d5a27;
+    --accent-light: #eaf3e8;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); }
+
+  header { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2rem; height: 58px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+  .logo { font-family: 'Playfair Display', serif; font-size: 21px; }
+  .logo em { font-style: italic; color: var(--accent); }
+  .cart-btn { display: flex; align-items: center; gap: 8px; font-size: 14px; cursor: pointer; border: 1px solid var(--border); padding: 7px 14px; border-radius: 99px; background: transparent; font-family: inherit; color: var(--text); transition: all 0.15s; }
+  .cart-btn:hover { border-color: #c0bdb4; }
+  .cart-count { background: var(--accent); color: white; border-radius: 50%; width: 18px; height: 18px; font-size: 11px; font-weight: 600; display: none; align-items: center; justify-content: center; }
+  .cart-count.on { display: flex; }
+
+  .hero { text-align: center; padding: 3.5rem 2rem 1.5rem; }
+  .hero h1 { font-family: 'Playfair Display', serif; font-size: clamp(32px, 6vw, 58px); font-weight: 600; line-height: 1.1; letter-spacing: -0.02em; }
+  .hero h1 em { font-style: italic; color: var(--accent); }
+  .hero p { color: var(--muted); margin-top: 10px; font-size: 15px; }
+
+  .filters { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; padding: 1.25rem 2rem; }
+  .fbtn { border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 13px; font-family: 'DM Sans', sans-serif; padding: 7px 18px; border-radius: 99px; cursor: pointer; transition: all 0.15s; }
+  .fbtn:hover { color: var(--text); border-color: #c0bdb4; }
+  .fbtn.on { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 18px; padding: 0 2rem 4rem; max-width: 1100px; margin: 0 auto; }
+  .card { background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; }
+  .card:hover { transform: translateY(-3px); box-shadow: 0 10px 28px rgba(0,0,0,0.07); }
+  .card-thumb { aspect-ratio: 3/4; background: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 60px; position: relative; }
+  .badge { position: absolute; top: 10px; left: 10px; font-size: 11px; font-weight: 500; padding: 3px 10px; border-radius: 99px; }
+  .badge-agotado { background: #f0f0ee; color: var(--muted); }
+  .badge-bajo { background: #fef3e2; color: #c67c11; }
+  .card-body { padding: 1rem; }
+  .card-name { font-size: 14px; font-weight: 500; margin-bottom: 2px; }
+  .card-desc { font-size: 12px; color: var(--muted); margin-bottom: 10px; line-height: 1.4; }
+  .card-foot { display: flex; align-items: center; justify-content: space-between; }
+  .price { font-size: 16px; font-weight: 600; }
+  .add-btn { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--border); background: transparent; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; color: var(--text); font-family: inherit; }
+  .add-btn:hover { background: var(--text); color: var(--bg); border-color: var(--text); }
+  .add-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .loading { grid-column: 1/-1; text-align: center; padding: 4rem; color: var(--muted); }
+  .spinner { width: 28px; height: 28px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 12px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* DRAWER */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 100; display: none; }
+  .overlay.on { display: block; }
+  .drawer { position: fixed; right: 0; top: 0; bottom: 0; width: 340px; background: var(--surface); z-index: 101; transform: translateX(100%); transition: transform 0.28s cubic-bezier(0.4,0,0.2,1); display: flex; flex-direction: column; border-left: 1px solid var(--border); }
+  .drawer.on { transform: translateX(0); }
+  .drawer-head { padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .drawer-head h2 { font-size: 17px; font-weight: 600; }
+  .close-btn { background: none; border: none; font-size: 22px; cursor: pointer; color: var(--muted); padding: 2px 6px; border-radius: 6px; }
+  .close-btn:hover { background: var(--bg); }
+  .drawer-items { flex: 1; overflow-y: auto; padding: 1rem 1.5rem; display: flex; flex-direction: column; gap: 10px; }
+  .drawer-empty { text-align: center; color: var(--muted); font-size: 14px; padding: 2rem 0; }
+  .item { display: flex; align-items: center; gap: 12px; }
+  .item-emoji { width: 48px; height: 48px; background: var(--bg); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+  .item-info { flex: 1; min-width: 0; }
+  .item-name { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .item-price { font-size: 12px; color: var(--muted); }
+  .qty { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+  .qty-btn { width: 22px; height: 22px; border: 1px solid var(--border); background: transparent; border-radius: 6px; cursor: pointer; font-size: 14px; display: flex; align-items: center; justify-content: center; transition: background 0.1s; }
+  .qty-btn:hover { background: var(--bg); }
+  .drawer-foot { padding: 1rem 1.5rem; border-top: 1px solid var(--border); }
+  .total-row { display: flex; justify-content: space-between; font-size: 15px; font-weight: 600; margin-bottom: 1rem; }
+  .checkout { width: 100%; padding: 13px; background: var(--text); color: var(--bg); border: none; border-radius: var(--radius); font-family: 'DM Sans', sans-serif; font-size: 15px; font-weight: 500; cursor: pointer; }
+  .checkout:hover { opacity: 0.85; }
+
+  .toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%) translateY(12px); background: var(--text); color: var(--bg); padding: 9px 20px; border-radius: 99px; font-size: 13px; opacity: 0; transition: all 0.22s; pointer-events: none; white-space: nowrap; z-index: 200; }
+  .toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 580px) {
+    .grid { grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 0 1rem 3rem; }
+    .drawer { width: 100%; }
+    header { padding: 0 1rem; }
+    .hero { padding: 2rem 1rem 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">Mi <em>Tienda</em></div>
+  <button class="cart-btn" onclick="toggleDrawer()">
+    🛍 Carrito <span class="cart-count" id="cnt">0</span>
+  </button>
+</header>
+
+<div class="hero">
+  <h1>Colección<br><em>Primavera</em> 2026</h1>
+  <p>Moda con estilo y precio justo</p>
+</div>
+
+<div class="filters">
+  <button class="fbtn on" onclick="filtrar('todos', this)">Todos</button>
+  <button class="fbtn" onclick="filtrar('mujer', this)">Mujer</button>
+  <button class="fbtn" onclick="filtrar('hombre', this)">Hombre</button>
+  <button class="fbtn" onclick="filtrar('niños', this)">Niños</button>
+  <button class="fbtn" onclick="filtrar('accesorios', this)">Accesorios</button>
+</div>
+
+<div class="grid" id="grid">
+  <div class="loading"><div class="spinner"></div>Cargando productos…</div>
+</div>
+
+<div class="overlay" id="ov" onclick="toggleDrawer()"></div>
+<div class="drawer" id="drawer">
+  <div class="drawer-head">
+    <h2>Tu carrito</h2>
+    <button class="close-btn" onclick="toggleDrawer()">×</button>
+  </div>
+  <div class="drawer-items" id="drawer-items"></div>
+  <div class="drawer-foot" id="drawer-foot" style="display:none">
+    <div class="total-row"><span>Total</span><span id="total">$0</span></div>
+    <button class="checkout">Finalizar compra</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbzJ233KUKUeS4HPXSuRhYtuKv2SCQvvJLIk_YG3FmlJEjSZErYlkFpkWtcnFDwDxclZ/exec";
+
+const EMOJI = { mujer:'👗', hombre:'👔', niños:'🧒', accesorios:'👜' };
+
+let todos = [];
+let filtroActivo = 'todos';
+let carrito = JSON.parse(localStorage.getItem('carrito') || '[]');
+
+async function cargar() {
+  try {
+    const res = await fetch(URL_SCRIPT);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    todos = data.productos.filter(p => p.estado === 'activo');
+    renderGrid();
+  } catch(e) {
+    document.getElementById('grid').innerHTML = '<div class="loading">Error al cargar productos. Intentá más tarde.</div>';
+  }
+}
+
+function renderGrid() {
+  const lista = filtroActivo === 'todos' ? todos : todos.filter(p => p.categoria === filtroActivo);
+  const grid = document.getElementById('grid');
+  if (!lista.length) {
+    grid.innerHTML = '<div class="loading">Sin productos en esta categoría.</div>';
+    return;
+  }
+  grid.innerHTML = lista.map(p => {
+    const agotado = Number(p.stock) === 0;
+    const bajo = Number(p.stock) > 0 && Number(p.stock) < 5;
+    const emoji = EMOJI[p.categoria] || '👕';
+    return `
+    <div class="card">
+      <div class="card-thumb">
+        ${emoji}
+        ${agotado ? '<span class="badge badge-agotado">Agotado</span>' : bajo ? '<span class="badge badge-bajo">Últimas unidades</span>' : ''}
+      </div>
+      <div class="card-body">
+        <div class="card-name">${p.nombre}</div>
+        ${p.descripcion ? `<div class="card-desc">${p.descripcion}</div>` : ''}
+        <div class="card-foot">
+          <div class="price">$${fmt(p.precio)}</div>
+          <button class="add-btn" onclick="agregar('${p.fila}')" ${agotado ? 'disabled' : ''}>+</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function filtrar(cat, btn) {
+  filtroActivo = cat;
+  document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  renderGrid();
+}
+
+function agregar(fila) {
+  const p = todos.find(x => String(x.fila) === String(fila));
+  if (!p) return;
+  const ex = carrito.find(x => x.fila === p.fila);
+  if (ex) ex.qty++;
+  else carrito.push({ fila: p.fila, nombre: p.nombre, precio: Number(p.precio), emoji: EMOJI[p.categoria] || '👕', qty: 1 });
+  guardarCarrito();
+  showToast(p.nombre + ' agregado ✓');
+}
+
+function guardarCarrito() {
+  localStorage.setItem('carrito', JSON.stringify(carrito));
+  renderCarrito();
+}
+
+function renderCarrito() {
+  const cnt = carrito.reduce((s, x) => s + x.qty, 0);
+  const el = document.getElementById('cnt');
+  el.textContent = cnt;
+  el.classList.toggle('on', cnt > 0);
+  const items = document.getElementById('drawer-items');
+  const foot = document.getElementById('drawer-foot');
+  if (!carrito.length) {
+    items.innerHTML = '<div class="drawer-empty">Tu carrito está vacío 🛍</div>';
+    foot.style.display = 'none';
+    return;
+  }
+  items.innerHTML = carrito.map(it => `
+    <div class="item">
+      <div class="item-emoji">${it.emoji}</div>
+      <div class="item-info">
+        <div class="item-name">${it.nombre}</div>
+        <div class="item-price">$${fmt(it.precio)}</div>
+      </div>
+      <div class="qty">
+        <button class="qty-btn" onclick="cambiarQty(${it.fila}, -1)">−</button>
+        <span style="font-size:13px;font-weight:500;min-width:16px;text-align:center">${it.qty}</span>
+        <button class="qty-btn" onclick="cambiarQty(${it.fila}, 1)">+</button>
+      </div>
+    </div>`).join('');
+  const total = carrito.reduce((s, x) => s + x.precio * x.qty, 0);
+  document.getElementById('total').textContent = '$' + fmt(total);
+  foot.style.display = 'block';
+}
+
+function cambiarQty(fila, delta) {
+  const it = carrito.find(x => x.fila === fila);
+  if (!it) return;
+  it.qty += delta;
+  if (it.qty <= 0) carrito = carrito.filter(x => x.fila !== fila);
+  guardarCarrito();
+}
+
+function toggleDrawer() {
+  document.getElementById('drawer').classList.toggle('on');
+  document.getElementById('ov').classList.toggle('on');
+}
+
+function fmt(n) { return Number(n).toLocaleString('es-AR'); }
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  setTimeout(() => t.classList.remove('on'), 2200);
+}
+
+cargar();
+renderCarrito();
+</script>
+</body>
+</html>

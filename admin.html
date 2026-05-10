@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel Admin — Catálogo</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&family=DM+Mono:wght@400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --border: #e5e3dc;
+    --text: #1a1a18;
+    --muted: #8a8880;
+    --accent: #2d5a27;
+    --accent-light: #eaf3e8;
+    --danger: #c0392b;
+    --danger-light: #fdf0ee;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 2rem; display: flex; align-items: center; justify-content: space-between; height: 58px; position: sticky; top: 0; z-index: 100; }
+  .brand { font-size: 15px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .brand .dot { width: 8px; height: 8px; background: var(--accent); border-radius: 50%; }
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: var(--radius); font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer; border: 1px solid transparent; transition: all 0.15s; text-decoration: none; }
+  .btn-primary { background: var(--accent); color: white; border-color: var(--accent); }
+  .btn-primary:hover { background: #234a1e; }
+  .btn-outline { background: transparent; border-color: var(--border); color: var(--text); }
+  .btn-outline:hover { background: var(--bg); }
+  .btn-danger { background: var(--danger-light); color: var(--danger); border-color: #f5c6c2; }
+  .btn-danger:hover { background: #fae0dc; }
+  .btn-sm { padding: 5px 12px; font-size: 13px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 2rem; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+  .stat { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; }
+  .stat-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+  .stat-value { font-size: 22px; font-weight: 600; }
+
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 1.5rem; }
+  .panel-head { padding: 1rem 1.25rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+  .panel-title { font-size: 14px; font-weight: 600; }
+
+  /* FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 1.25rem; }
+  .form-full { grid-column: 1 / -1; }
+  .field label { display: block; font-size: 12px; font-weight: 500; color: var(--muted); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.04em; }
+  .field input, .field select, .field textarea {
+    width: 100%; border: 1px solid var(--border); border-radius: 8px;
+    padding: 9px 12px; font-family: inherit; font-size: 14px;
+    background: var(--bg); color: var(--text); transition: border-color 0.15s;
+  }
+  .field input:focus, .field select:focus, .field textarea:focus { outline: none; border-color: var(--accent); background: white; }
+  .field textarea { resize: vertical; min-height: 72px; }
+  .form-actions { grid-column: 1 / -1; display: flex; gap: 8px; justify-content: flex-end; padding-top: 4px; }
+
+  /* TABLE */
+  .search-wrap { display: flex; gap: 8px; align-items: center; }
+  .search { border: 1px solid var(--border); border-radius: 8px; padding: 7px 12px; font-family: inherit; font-size: 14px; background: var(--bg); color: var(--text); width: 200px; }
+  .search:focus { outline: none; border-color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { font-size: 11px; font-weight: 500; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; padding: 10px 14px; text-align: left; background: var(--bg); border-bottom: 1px solid var(--border); }
+  td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafaf8; }
+  .badge { display: inline-block; padding: 3px 9px; border-radius: 99px; font-size: 12px; font-weight: 500; }
+  .badge-activo { background: var(--accent-light); color: var(--accent); }
+  .badge-inactivo { background: #f0f0ee; color: var(--muted); }
+  .badge-low { background: #fef3e2; color: #e67e22; }
+  .act { display: flex; gap: 6px; }
+  .empty { text-align: center; padding: 2.5rem; color: var(--muted); font-size: 14px; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; padding: 10px 18px; border-radius: var(--radius); font-size: 14px; font-weight: 500; z-index: 999; opacity: 0; transform: translateY(8px); transition: all 0.2s; pointer-events: none; }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.ok { background: var(--accent); color: white; }
+  .toast.err { background: var(--danger); color: white; }
+  .toast.info { background: var(--text); color: white; }
+
+  /* OVERLAY CONFIRM */
+  .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.35); z-index: 200; display: none; align-items: center; justify-content: center; }
+  .overlay.open { display: flex; }
+  .confirm-box { background: var(--surface); border-radius: 14px; padding: 1.5rem; width: 320px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.15); }
+  .confirm-box h3 { font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+  .confirm-box p { font-size: 14px; color: var(--muted); margin-bottom: 1.25rem; }
+  .confirm-box .act { justify-content: center; }
+
+  @media (max-width: 600px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .container { padding: 1rem; }
+    .topbar { padding: 0 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><div class="dot"></div>Panel Admin</div>
+  <a href="catalogo.html" class="btn btn-outline btn-sm" target="_blank">Ver catálogo ↗</a>
+</div>
+
+<div class="container">
+
+  <div class="stats">
+    <div class="stat"><div class="stat-label">Productos</div><div class="stat-value" id="s-total">—</div></div>
+    <div class="stat"><div class="stat-label">Activos</div><div class="stat-value" id="s-activos">—</div></div>
+    <div class="stat"><div class="stat-label">Stock bajo</div><div class="stat-value" id="s-bajo">—</div></div>
+    <div class="stat"><div class="stat-label">Categorías</div><div class="stat-value" id="s-cats">—</div></div>
+  </div>
+
+  <!-- FORM -->
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title" id="form-title">➕ Agregar producto</div>
+      <button class="btn btn-outline btn-sm" id="cancel-btn" onclick="cancelEdit()" style="display:none">Cancelar edición</button>
+    </div>
+    <div class="form-grid">
+      <input type="hidden" id="f-fila">
+
+      <div class="field form-full">
+        <label>Nombre del producto *</label>
+        <input type="text" id="f-nombre" placeholder="Ej: Vestido lino beige">
+      </div>
+
+      <div class="field">
+        <label>Precio (ARS) *</label>
+        <input type="number" id="f-precio" placeholder="0" min="0">
+      </div>
+
+      <div class="field">
+        <label>Stock (unidades) *</label>
+        <input type="number" id="f-stock" placeholder="0" min="0">
+      </div>
+
+      <div class="field">
+        <label>Categoría *</label>
+        <select id="f-categoria">
+          <option value="">Seleccionar…</option>
+          <option value="mujer">Mujer</option>
+          <option value="hombre">Hombre</option>
+          <option value="niños">Niños</option>
+          <option value="accesorios">Accesorios</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Estado</label>
+        <select id="f-estado">
+          <option value="activo">Activo</option>
+          <option value="inactivo">Inactivo</option>
+        </select>
+      </div>
+
+      <div class="field form-full">
+        <label>Descripción (opcional)</label>
+        <textarea id="f-descripcion" placeholder="Talle, material, color…"></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" id="save-btn" onclick="guardar()">Guardar producto</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABLE -->
+  <div class="panel">
+    <div class="panel-head">
+      <div class="panel-title">Lista de productos</div>
+      <div class="search-wrap">
+        <input class="search" type="text" placeholder="Buscar…" oninput="buscar(this.value)">
+        <button class="btn btn-outline btn-sm" onclick="cargarProductos()">↺ Actualizar</button>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Categoría</th>
+          <th>Precio</th>
+          <th>Stock</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody id="tbody">
+        <tr><td colspan="6" class="empty">Cargando…</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<!-- Confirm delete -->
+<div class="overlay" id="overlay">
+  <div class="confirm-box">
+    <h3>¿Eliminar producto?</h3>
+    <p>Esta acción borrará la fila de Google Sheets y no se puede deshacer.</p>
+    <div class="act">
+      <button class="btn btn-outline" onclick="cerrarConfirm()">Cancelar</button>
+      <button class="btn btn-danger" id="confirm-btn">Sí, eliminar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const URL_SCRIPT = "https://script.google.com/macros/s/AKfycbzJ233KUKUeS4HPXSuRhYtuKv2SCQvvJLIk_YG3FmlJEjSZErYlkFpkWtcnFDwDxclZ/exec";
+
+let productos = [];
+let filaEliminar = null;
+
+// ── CARGAR ────────────────────────────────────────────────
+async function cargarProductos() {
+  tbody().innerHTML = '<tr><td colspan="6" class="empty">Cargando…</td></tr>';
+  try {
+    const res = await fetch(URL_SCRIPT);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    productos = data.productos;
+    renderTabla(productos);
+    actualizarStats();
+  } catch(e) {
+    tbody().innerHTML = '<tr><td colspan="6" class="empty">Error al cargar. Revisá la URL del script.</td></tr>';
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+function renderTabla(lista) {
+  if (!lista.length) {
+    tbody().innerHTML = '<tr><td colspan="6" class="empty">Sin productos. ¡Agregá el primero arriba!</td></tr>';
+    return;
+  }
+  tbody().innerHTML = lista.map(p => `
+    <tr>
+      <td><strong>${p.nombre}</strong>${p.descripcion ? `<br><span style="font-size:12px;color:var(--muted)">${p.descripcion}</span>` : ''}</td>
+      <td>${cap(p.categoria)}</td>
+      <td>$${fmt(p.precio)}</td>
+      <td><span class="${Number(p.stock) < 5 ? 'badge badge-low' : ''}">${p.stock}</span></td>
+      <td><span class="badge badge-${p.estado}">${p.estado}</span></td>
+      <td>
+        <div class="act">
+          <button class="btn btn-outline btn-sm" onclick="editar(${p.fila})">Editar</button>
+          <button class="btn btn-danger btn-sm" onclick="confirmarEliminar(${p.fila})">Eliminar</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function actualizarStats() {
+  document.getElementById('s-total').textContent = productos.length;
+  document.getElementById('s-activos').textContent = productos.filter(p => p.estado === 'activo').length;
+  document.getElementById('s-bajo').textContent = productos.filter(p => Number(p.stock) < 5).length;
+  document.getElementById('s-cats').textContent = new Set(productos.map(p => p.categoria)).size;
+}
+
+// ── GUARDAR ───────────────────────────────────────────────
+async function guardar() {
+  const nombre = val('f-nombre');
+  const precio = val('f-precio');
+  const stock  = val('f-stock');
+  const cat    = val('f-categoria');
+
+  if (!nombre || !precio || !stock || !cat) {
+    toast('Completá los campos obligatorios (*)', 'err'); return;
+  }
+
+  const fila = val('f-fila');
+  const payload = {
+    accion: fila ? 'actualizar' : 'agregar',
+    fila: fila ? Number(fila) : undefined,
+    nombre,
+    precio: Number(precio),
+    categoria: cat,
+    stock: Number(stock),
+    descripcion: val('f-descripcion'),
+    estado: val('f-estado')
+  };
+
+  const btn = document.getElementById('save-btn');
+  btn.textContent = 'Guardando…'; btn.disabled = true;
+
+  try {
+    const res = await fetch(URL_SCRIPT, {
+      method: 'POST',
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    toast(fila ? 'Producto actualizado ✓' : 'Producto agregado ✓', 'ok');
+    limpiarForm();
+    await cargarProductos();
+  } catch(e) {
+    toast('Error: ' + e.message, 'err');
+  } finally {
+    btn.textContent = 'Guardar producto'; btn.disabled = false;
+  }
+}
+
+// ── EDITAR ────────────────────────────────────────────────
+function editar(fila) {
+  const p = productos.find(x => x.fila === fila);
+  if (!p) return;
+  set('f-fila', fila);
+  set('f-nombre', p.nombre);
+  set('f-precio', p.precio);
+  set('f-stock', p.stock);
+  set('f-categoria', p.categoria);
+  set('f-estado', p.estado);
+  set('f-descripcion', p.descripcion);
+  document.getElementById('form-title').textContent = '✏️ Editando: ' + p.nombre;
+  document.getElementById('cancel-btn').style.display = 'inline-flex';
+  document.getElementById('save-btn').textContent = 'Actualizar producto';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function cancelEdit() {
+  limpiarForm();
+}
+
+function limpiarForm() {
+  ['f-fila','f-nombre','f-precio','f-stock','f-descripcion'].forEach(id => set(id, ''));
+  set('f-categoria', '');
+  set('f-estado', 'activo');
+  document.getElementById('form-title').textContent = '➕ Agregar producto';
+  document.getElementById('cancel-btn').style.display = 'none';
+  document.getElementById('save-btn').textContent = 'Guardar producto';
+}
+
+// ── ELIMINAR ──────────────────────────────────────────────
+function confirmarEliminar(fila) {
+  filaEliminar = fila;
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('confirm-btn').onclick = eliminar;
+}
+
+function cerrarConfirm() {
+  document.getElementById('overlay').classList.remove('open');
+  filaEliminar = null;
+}
+
+async function eliminar() {
+  cerrarConfirm();
+  try {
+    const res = await fetch(URL_SCRIPT, {
+      method: 'POST',
+      body: JSON.stringify({ accion: 'eliminar', fila: filaEliminar })
+    });
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+    toast('Producto eliminado', 'ok');
+    await cargarProductos();
+  } catch(e) {
+    toast('Error: ' + e.message, 'err');
+  }
+}
+
+// ── BUSCAR ────────────────────────────────────────────────
+function buscar(q) {
+  const filtrados = productos.filter(p =>
+    p.nombre.toLowerCase().includes(q.toLowerCase()) ||
+    p.categoria.toLowerCase().includes(q.toLowerCase())
+  );
+  renderTabla(filtrados);
+}
+
+// ── UTILS ─────────────────────────────────────────────────
+function tbody() { return document.getElementById('tbody'); }
+function val(id) { return document.getElementById(id).value.trim(); }
+function set(id, v) { document.getElementById(id).value = v; }
+function fmt(n) { return Number(n).toLocaleString('es-AR'); }
+function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : '—'; }
+
+function toast(msg, tipo = 'info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + tipo + ' show';
+  setTimeout(() => t.className = 'toast', 3000);
+}
+
+cargarProductos();
+</script>
+</body>
+</html>
